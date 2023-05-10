@@ -1,0 +1,4 @@
+boto3==1.26.123
+pandas==2.0.1
+psutil==5.9.5
+sagemaker==2.151.0
