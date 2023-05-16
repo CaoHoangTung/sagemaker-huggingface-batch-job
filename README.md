@@ -1,5 +1,5 @@
 # AWS SageMaker Huggingface Summarization
-This repostitory contains the code that utilize SageMaker Batch Transform to summarize a large amount of text data
+This repository contains the code that utilize SageMaker Batch Transform to summarize a large amount of text data
 
 ## Setup
 
