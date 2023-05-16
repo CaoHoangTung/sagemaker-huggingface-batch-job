@@ -1,6 +1,23 @@
+"""
+This script is used to preprocess a directory of csv files.
+It will trim the length in the text, convert and output them to jsonl files in an output directory
+
+Usage:
+python convert_and_limit.py \
+--input-dir [INPUT_DIRECTORY] \
+--output-dir [OUTPUT_DIRECTORY] \
+--num-threads [MUTITHREAD_COUNT, default 5] \
+--num-processes [MUTIPROCESS_COUNT, default 4]
+"""
+
+from multiprocessing import Pool
+from multiprocessing.pool import ThreadPool
+import os
+import time
 import pandas as pd
 import jsonlines
 from transformers import AutoTokenizer
+from argparse import ArgumentParser
 
 tokenizer = AutoTokenizer.from_pretrained("sshleifer/distilbart-cnn-12-6")
 def cut_sentence(sentence):
@@ -21,7 +38,31 @@ def csv_to_jsonl(csv_file_path, jsonl_file_path):
             # Write a dictionary containing the input text to the JSON Lines file
             writer.write({'inputs': text})
 
-# Example usage
-csv_file_path = 'category_test.csv'
-jsonl_file_path = 'category_test_limited.jsonl'
-csv_to_jsonl(csv_file_path, jsonl_file_path)
+def process_files(arguments, num_threads=5):
+    thread_pool = ThreadPool(num_threads)
+    thread_pool.starmap(csv_to_jsonl, arguments)
+
+def main(args):
+    t0 = time.time()
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    process_pool = Pool(args.num_processes)
+
+    arguments = []
+    for input_file in os.listdir(args.input_dir):
+        input_path = os.path.join(args.input_dir, input_file)
+        output_path = os.path.join(args.output_dir, f'{os.path.splitext(input_file)[0]}.jsonl')
+        arguments.append((input_path, output_path))
+
+    splited_arguments = list(map(list, zip(*zip(*[iter(arguments)] * args.num_processes))))
+    process_pool.starmap(process_files, [(argument, args.num_threads) for argument in splited_arguments])
+    print("Time taken", time.time() - t0)
+    
+if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument('--input-dir', type=str, help="Input directory that contains the csv files")
+    parser.add_argument('--output-dir', type=str, help="Input directory that would contain the resulting jsonl files")
+    parser.add_argument('--num-threads', type=int, default=5, help="Number of thread")
+    parser.add_argument('--num-processes', type=int, default=4, help="Number of process")
+    args = parser.parse_args()
+    main(args)

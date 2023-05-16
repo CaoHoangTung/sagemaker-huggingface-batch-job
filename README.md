@@ -21,11 +21,18 @@ Create a service IAM role for SageMaker, named `sagemaker-summarization`, with t
 ### Step 1: File preparation
 
 #### Preprocess the file
-First, we need to prepare the file in `.jsonl` format, which is compatible with SageMaker. In general, you should prepare a directory with multiple files, each should has the format as following
+First, we need to prepare the file in `.jsonl` format, which is compatible with SageMaker. In general, you should prepare a directory with multiple files, each should has the format as following:
 ```jsonline
 {"inputs": "A long text that need summarization"}
 {"inputs": "Another long text that need summarization"}
 ...
+```
+
+To convert the csv files to jsonl files and limit the text length, run the `convert_and_limit.py` script
+```bash
+python convert_and_limit.py \
+--input-dir [YOUR_CSV_DIR] \
+--output-dir [YOUR_OUTPUT_DIR]
 ```
 
 To be able to minimize errors and maximize performance, each file should have about 1,000 lines, all of them being inside a directory
@@ -96,7 +103,7 @@ Select the job that you have created, and access the URL in `S3 output path`. Yo
 
 Alternatively, you could use the AWS CLI to download the file, for example
 ```bash
-aws s3 sync s3://sagemaker-us-east-1-output/ ./output --recursive
+aws s3 cp s3://sagemaker-us-east-1-output/... ./output --recursive
 ```
 
 
