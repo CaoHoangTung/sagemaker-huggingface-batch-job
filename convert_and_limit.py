@@ -50,11 +50,13 @@ def main(args):
 
     arguments = []
     for input_file in os.listdir(args.input_dir):
+        print(input_file)
         input_path = os.path.join(args.input_dir, input_file)
         output_path = os.path.join(args.output_dir, f'{os.path.splitext(input_file)[0]}.jsonl')
         arguments.append((input_path, output_path))
 
-    splited_arguments = list(map(list, zip(*zip(*[iter(arguments)] * args.num_processes))))
+    splited_arguments = list(map(list, zip(*zip(*[iter(arguments)] * args.num_processes)))) if len(arguments) >= args.num_processes else [arguments]
+    print("splited_arguments", splited_arguments)
     process_pool.starmap(process_files, [(argument, args.num_threads) for argument in splited_arguments])
     print("Time taken", time.time() - t0)
     
