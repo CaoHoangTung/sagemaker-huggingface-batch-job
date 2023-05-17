@@ -21,7 +21,14 @@ from argparse import ArgumentParser
 
 tokenizer = AutoTokenizer.from_pretrained("sshleifer/distilbart-cnn-12-6")
 def cut_sentence(sentence):
-   return tokenizer.decode(tokenizer.encode(sentence)[1:-1][:tokenizer.max_len_single_sentence-2])
+    new_tokens = tokenizer.encode(sentence)[1:-1][:tokenizer.max_len_single_sentence-2]
+    result = tokenizer.decode(new_tokens)
+    
+    # In some cases, the re-encoded tokens will have longer length, so we will trim it to make sure everything goes right
+    while len(tokenizer.encode(result)) > tokenizer.max_len_single_sentence:
+        new_tokens = new_tokens[:-1]
+        result = tokenizer.decode(new_tokens)
+    return result
 
 
 def csv_to_jsonl(csv_file_path, jsonl_file_path):
