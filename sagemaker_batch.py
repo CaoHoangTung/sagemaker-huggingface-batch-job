@@ -48,6 +48,7 @@ def main(args):
 
     # create transformer to run a batch job
     batch_job = huggingface_model.transformer(
+        accept=args.content_type,
         instance_count=args.num_instances,
         instance_type=args.instance_type,
         max_concurrent_transforms=args.num_instances,
@@ -59,8 +60,10 @@ def main(args):
     batch_job.transform(
         data=args.s3_path,
         # data='s3://sagemaker-summarization-input/test01_5k_1xml.g4dn.xlarge',
-        content_type=args.content_type,    
-        split_type=args.split_type
+        content_type=args.content_type,
+        output_filter=args.output_filter,
+        join_source=args.join_source,
+        split_type=args.split_type,
     )
 
 
@@ -81,6 +84,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--s3-path", type=str, help="Path to S3 data folder that would be processed")
     parser.add_argument("--content-type", type=str, default="application/json", help="Content type of S3 data")
+    parser.add_argument("--join-source", type=str, default="Input", help="Decide whenever we join input with output or not. Could be Input|None")
+    parser.add_argument("--output-filter", type=str, default="$['domain','SageMakerOutput']", help="Fields to include in outptu file. Default to all")
     parser.add_argument("--split-type", type=str, default="Line", help="Split type of S3 files")
 
     args = parser.parse_args()

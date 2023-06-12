@@ -31,19 +31,24 @@ def cut_sentence(sentence):
     return result
 
 
-def csv_to_jsonl(csv_file_path, jsonl_file_path):
+def csv_to_jsonl(csv_file_path, jsonl_file_path, chunk_size=1000):
     # Load the CSV file using pandas
-    df = pd.read_csv(csv_file_path)
+    df = pd.read_csv(csv_file_path, chunksize=chunk_size)
 
     # Open the JSON Lines file for writing
     with jsonlines.open(jsonl_file_path, 'w') as writer:
         # Iterate over the rows in the dataframe
-        for _, row in df.iterrows():
-            # Extract the text value from the 'text' column
-            text = cut_sentence(str(row['text']))
+        for chunk in df:
+            for _, row in chunk.iterrows():
+                # Extract the text value from the 'text' column
+                text = cut_sentence(str(row['text']))
+                other_values = {key: row[key] for key, _ in row.items() if key != 'text'}
 
-            # Write a dictionary containing the input text to the JSON Lines file
-            writer.write({'inputs': text})
+                # Write a dictionary containing the input text to the JSON Lines file
+                writer.write({
+                    'inputs': text,
+                    **other_values
+                })
 
 def process_files(arguments, num_threads=5):
     thread_pool = ThreadPool(num_threads)
@@ -61,6 +66,7 @@ def main(args):
         input_path = os.path.join(args.input_dir, input_file)
         output_path = os.path.join(args.output_dir, f'{os.path.splitext(input_file)[0]}.jsonl')
         arguments.append((input_path, output_path))
+    arguments.append(args.chunk_size)
 
     splited_arguments = list(map(list, zip(*zip(*[iter(arguments)] * args.num_processes)))) if len(arguments) >= args.num_processes else [arguments]
     print("splited_arguments", splited_arguments)
@@ -73,5 +79,6 @@ if __name__ == '__main__':
     parser.add_argument('--output-dir', type=str, help="Input directory that would contain the resulting jsonl files")
     parser.add_argument('--num-threads', type=int, default=5, help="Number of thread")
     parser.add_argument('--num-processes', type=int, default=4, help="Number of process")
+    parser.add_argument('--chunk-size', type=int, default=1000, help="Number of row to lazy load per chunk")
     args = parser.parse_args()
     main(args)
